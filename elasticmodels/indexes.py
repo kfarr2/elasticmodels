@@ -337,6 +337,19 @@ class Index(DocType):
         )
 
     def delete_mapping(self):
-        return self.es.indices.delete_mapping(index=self._doc_type.index, doc_type=self._doc_type.mapping.doc_type, ignore=[404])
+        """
+        New elasticsearch doesn't support delete_mapping.
+
+        https://www.elastic.co/guide/en/elasticsearch/reference/2.0/indices-delete-mapping.html
+
+        "It is no longer possible to delete the mapping for a type.
+        Instead you should delete the index and recreate it with the new mappings."
+
+        """
+        index = self._doc_type.index
+        self.es.indices.delete(index=index)
+        analysis = collect_analysis(self._doc_type.using)
+        return self.es.indices.create(index=index, body={'settings': {'analysis': analysis}})
+
 
 from .analysis import collect_analysis
